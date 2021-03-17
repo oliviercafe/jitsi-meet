@@ -1134,7 +1134,9 @@ class Toolbox extends Component<Props, State> {
 
         if (this._shouldShowButton('chat')) {
             buttons.has('chat')
-                ? mainMenuAdditionalButtons.push(<div className = 'toolbar-button-with-badge'>
+                ? mainMenuAdditionalButtons.push(<div
+                    className = 'toolbar-button-with-badge'
+                    key = 'chatcontainer'>
                     <ToolbarButton
                         accessibilityLabel = { t('toolbar.accessibilityLabel.chat') }
                         icon = { IconChat }
@@ -1173,8 +1175,7 @@ class Toolbox extends Component<Props, State> {
                 ? mainMenuAdditionalButtons.push(
                     <TileViewButton
                         key = 'tileview'
-                        showLabel = { false }
-                        visible = { true } />)
+                        showLabel = { false } />)
                 : overflowMenuAdditionalButtons.push(
                     <TileViewButton
                         key = 'tileview'

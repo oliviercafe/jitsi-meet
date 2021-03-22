@@ -456,6 +456,10 @@ var config = {
     // Enables sending participants' emails (if available) to callstats and other analytics
     // enableEmailInStats: false,
 
+    // Controls the percentage of automatic feedback shown to participants when callstats is enabled.
+    // The default value is 100%. If set to 0, no automatic feedback will be requested
+    // feedbackPercentage: 100,
+
     // Privacy
     //
 
@@ -617,6 +621,10 @@ var config = {
     // A property to disable the right click context menu for localVideo
     // the menu has option to flip the locally seen video for local presentations
     // disableLocalVideoFlip: false,
+
+    // A property used to unset the default flip state of the local video.
+    // When it is set to 'true', the local(self) video will not be mirrored anymore.
+    // doNotFlipLocalVideo: false,
 
     // Mainly privacy related settings
 

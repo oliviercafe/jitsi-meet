@@ -63,13 +63,13 @@ class AudioDeviceHandlerConnectionService implements
         }
         switch (audioDevice) {
             case AudioModeModule.DEVICE_BLUETOOTH:
-                return CallAudioState.ROUTE_BLUETOOTH;
+                return CallAudioState.ROUTE_WIRED_HEADSET;
             case AudioModeModule.DEVICE_EARPIECE:
-                return CallAudioState.ROUTE_EARPIECE;
+                return CallAudioState.ROUTE_WIRED_HEADSET;
             case AudioModeModule.DEVICE_HEADPHONES:
                 return CallAudioState.ROUTE_WIRED_HEADSET;
             case AudioModeModule.DEVICE_SPEAKER:
-                return CallAudioState.ROUTE_SPEAKER;
+                return CallAudioState.ROUTE_WIRED_HEADSET;
             default:
                 JitsiMeetLogger.e(TAG + " Unsupported device name: " + audioDevice);
                 return CallAudioState.ROUTE_WIRED_HEADSET;

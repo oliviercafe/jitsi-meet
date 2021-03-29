@@ -84,7 +84,11 @@ class AudioDeviceHandlerGeneric implements
                         devices.add(AudioModeModule.DEVICE_SPEAKER);
                         break;
                     case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                        devices.add(AudioModeModule.DEVICE_HEADPHONES);
+                        break;
                     case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                        devices.add(AudioModeModule.DEVICE_HEADPHONES);
+                        break;
                     case TYPE_USB_HEADSET:
                         devices.add(AudioModeModule.DEVICE_HEADPHONES);
                         break;

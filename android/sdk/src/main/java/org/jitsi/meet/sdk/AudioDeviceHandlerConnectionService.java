@@ -59,20 +59,20 @@ class AudioDeviceHandlerConnectionService implements
      */
     private static int audioDeviceToRouteInt(String audioDevice) {
         if (audioDevice == null) {
-            return CallAudioState.ROUTE_WIRED_HEADSET;
+            return CallAudioState.ROUTE_SPEAKER;
         }
         switch (audioDevice) {
             case AudioModeModule.DEVICE_BLUETOOTH:
-                return CallAudioState.ROUTE_WIRED_HEADSET;
+                return CallAudioState.ROUTE_BLUETOOTH;
             case AudioModeModule.DEVICE_EARPIECE:
-                return CallAudioState.ROUTE_WIRED_HEADSET;
+                return CallAudioState.ROUTE_EARPIECE;
             case AudioModeModule.DEVICE_HEADPHONES:
                 return CallAudioState.ROUTE_WIRED_HEADSET;
             case AudioModeModule.DEVICE_SPEAKER:
-                return CallAudioState.ROUTE_WIRED_HEADSET;
+                return CallAudioState.ROUTE_SPEAKER;
             default:
                 JitsiMeetLogger.e(TAG + " Unsupported device name: " + audioDevice);
-                return CallAudioState.ROUTE_WIRED_HEADSET;
+                return CallAudioState.ROUTE_SPEAKER;
         }
     }
 

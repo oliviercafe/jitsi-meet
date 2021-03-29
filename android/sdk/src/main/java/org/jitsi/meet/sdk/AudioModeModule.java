@@ -62,7 +62,7 @@ class AudioModeModule extends ReactContextBaseJavaModule {
      * Constants representing the audio mode.
      * - DEFAULT: Used before and after every call. It represents the default
      *   audio routing scheme.
-     * - AUDIO_CALL: Used for audio only calls. It will use the earpiece by
+     * - AUDIO_CALL : Used for audio only calls. It will use the earpiece by
      *   default, unless a wired or Bluetooth headset is connected.
      * - VIDEO_CALL: Used for video calls. It will use the speaker by default,
      *   unless a wired or Bluetooth headset is connected.
@@ -280,9 +280,9 @@ class AudioModeModule extends ReactContextBaseJavaModule {
         Activity currentActivity = getCurrentActivity();
         if (currentActivity != null) {
             if (mode == DEFAULT) {
-                currentActivity.setVolumeControlStream(AudioManager.USE_DEFAULT_STREAM_TYPE);
+                currentActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
             } else {
-                currentActivity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+                currentActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
             }
         }
 

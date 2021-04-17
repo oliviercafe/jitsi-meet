@@ -117,13 +117,15 @@ var config = {
     // participants and to enable it back a reload is needed.
     // startSilent: false
 
-    // Sets the preferred target bitrate for the Opus audio codec by setting its
-    // 'maxaveragebitrate' parameter. Currently not available in p2p mode.
-    // Valid values are in the range 6000 to 510000
-    // opusMaxAverageBitrate: 20000,
-
     // Enables support for opus-red (redundancy for Opus).
-    // enableOpusRed: false
+    // enableOpusRed: false,
+
+    // Specify audio quality stereo and opusMaxAverageBitrate values in order to enable HD audio.
+    // Beware, by doing so, you are disabling echo cancellation, noise suppression and AGC.
+    // audioQuality: {
+    //     stereo: false,
+    //     opusMaxAverageBitrate: null // Value to fit the 6000 to 510000 range.
+    // },
 
     // Video
 
@@ -261,12 +263,24 @@ var config = {
     //    // to take effect.
     //    preferredCodec: 'VP8',
     //
+    //    // Provides a way to enforce the preferred codec for the conference even when the conference has endpoints
+    //    // that do not support the preferred codec. For example, older versions of Safari do not support VP9 yet.
+    //    // This will result in Safari not being able to decode video from endpoints sending VP9 video.
+    //    // When set to false, the conference falls back to VP8 whenever there is an endpoint that doesn't support the
+    //    // preferred codec and goes back to the preferred codec when that endpoint leaves.
+    //    // enforcePreferredCodec: false,
+    //
     //    // Provides a way to configure the maximum bitrates that will be enforced on the simulcast streams for
     //    // video tracks. The keys in the object represent the type of the stream (LD, SD or HD) and the values
     //    // are the max.bitrates to be set on that particular type of stream. The actual send may vary based on
     //    // the available bandwidth calculated by the browser, but it will be capped by the values specified here.
     //    // This is currently not implemented on app based clients on mobile.
     //    maxBitratesVideo: {
+    //          H264: {
+    //              low: 200000,
+    //              standard: 500000,
+    //              high: 1500000
+    //          },
     //          VP8 : {
     //              low: 200000,
     //              standard: 500000,
@@ -332,8 +346,7 @@ var config = {
     // enableIceRestart: false,
 
     // Enables forced reload of the client when the call is migrated as a result of
-    // the bridge going down. Currently enabled by default as call migration through
-    // session-terminate is causing siganling issues when Octo is enabled.
+    // the bridge going down.
     // enableForcedReload: true,
 
     // Use TURN/UDP servers for the jitsi-videobridge connection (by default
@@ -428,7 +441,7 @@ var config = {
     // toolbarButtons: [
     //    'microphone', 'camera', 'closedcaptions', 'desktop', 'embedmeeting', 'fullscreen',
     //    'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
-    //    'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+    //    'livestreaming', 'etherpad', 'sharedvideo', 'shareaudio', 'settings', 'raisehand',
     //    'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
     //    'tileview', 'select-background', 'download', 'help', 'mute-everyone', 'mute-video-everyone', 'security'
     // ],
@@ -481,13 +494,6 @@ var config = {
         // connection.
         enabled: true,
 
-        // The STUN servers that will be used in the peer to peer connections
-        stunServers: [
-
-            // { urls: 'stun:jitsi-meet.example.com:3478' },
-            { urls: 'stun:meet-jit-si-turnrelay.jitsi.net:443' }
-        ]
-
         // Sets the ICE transport policy for the p2p connection. At the time
         // of this writing the list of possible values are 'all' and 'relay',
         // but that is subject to change in the future. The enum is defined in
@@ -498,7 +504,7 @@ var config = {
 
         // If set to true, it will prefer to use H.264 for P2P calls (if H.264
         // is supported). This setting is deprecated, use preferredCodec instead.
-        // preferH264: true
+        // preferH264: true,
 
         // Provides a way to set the video codec preference on the p2p connection. Acceptable
         // codec values are 'VP8', 'VP9' and 'H264'.
@@ -513,7 +519,14 @@ var config = {
 
         // How long we're going to wait, before going back to P2P after the 3rd
         // participant has left the conference (to filter out page reload).
-        // backToP2PDelay: 5
+        // backToP2PDelay: 5,
+
+        // The STUN servers that will be used in the peer to peer connections
+        stunServers: [
+
+            // { urls: 'stun:jitsi-meet.example.com:3478' },
+            { urls: 'stun:meet-jit-si-turnrelay.jitsi.net:443' }
+        ]
     },
 
     analytics: {
@@ -540,7 +553,7 @@ var config = {
         // The interval at which rtcstats will poll getStats, defaults to 1000ms.
         // If the value is set to 0 getStats won't be polled and the rtcstats client
         // will only send data related to RTCPeerConnection events.
-        // rtcstatsPolIInterval: 1000
+        // rtcstatsPolIInterval: 1000,
 
         // Array of script URLs to load as lib-jitsi-meet "analytics handlers".
         // scriptURLs: [
@@ -562,6 +575,10 @@ var config = {
 
     // Decides whether the start/stop recording audio notifications should play on record.
     // disableRecordAudioNotification: false,
+
+    // Disables the sounds that play when other participants join or leave the
+    // conference (if set to true, these sounds will not be played).
+    // disableJoinLeaveSounds: false,
 
     // Information for the chrome extension banner
     // chromeExtensionBanner: {
@@ -673,6 +690,9 @@ var config = {
     */
     // dynamicBrandingUrl: '',
 
+    // Sets the background transparency level. '0' is fully transparent, '1' is opaque.
+    // backgroundAlpha: 1,
+
     // The URL of the moderated rooms microservice, if available. If it
     // is present, a link to the service will be rendered on the welcome page,
     // otherwise the app doesn't render it.
@@ -682,13 +702,13 @@ var config = {
     // disableTileView: true,
 
     // Hides the conference subject
-    // hideConferenceSubject: true
+    // hideConferenceSubject: true,
 
     // Hides the conference timer.
     // hideConferenceTimer: true,
 
     // Hides the participants stats
-    // hideParticipantsStats: true
+    // hideParticipantsStats: true,
 
     // Sets the conference subject
     // subject: 'Conference Subject',

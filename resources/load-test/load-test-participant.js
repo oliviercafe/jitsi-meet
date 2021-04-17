@@ -3,6 +3,7 @@ import 'jquery';
 import { setConfigFromURLParams } from '../../react/features/base/config/functions';
 import { parseURLParams } from '../../react/features/base/util/parseURLParams';
 import { parseURIString } from '../../react/features/base/util/uri';
+import { validateLastNLimits, limitLastN } from '../../react/features/base/lastn/functions';
 
 setConfigFromURLParams(config, {}, {}, window.location);
 
@@ -13,9 +14,7 @@ const {
     remoteVideo = isHuman,
     remoteAudio = isHuman,
     autoPlayVideo = config.testing.noAutoPlayVideo !== true,
-
-    // Whether to create local audio even if muted
-    autoCreateLocalAudio = config.testing.noAutoLocalAudio !== true
+    stageView = config.disableTileView
 } = params;
 
 let {
@@ -26,6 +25,8 @@ const { room: roomName } = parseURIString(window.location.toString());
 
 let connection = null;
 
+let connected = false;
+
 let room = null;
 
 let numParticipants = 1;
@@ -34,6 +35,8 @@ let localTracks = [];
 const remoteTracks = {};
 
 let maxFrameHeight = 0;
+
+let selectedParticipant = null;
 
 window.APP = {
     conference: {
@@ -44,7 +47,6 @@ window.APP = {
             return room && room.getConnectionState();
         },
         muteAudio(mute) {
-            // Note: will have no effect if !autoCreateLocalAudio
             localAudio = mute;
             for (let i = 0; i < localTracks.length; i++) {
                 if (localTracks[i].getType() === 'audio') {
@@ -53,6 +55,11 @@ window.APP = {
                     }
                     else {
                         localTracks[i].unmute();
+
+                        // if track was not added we need to add it to the peerconnection
+                        if (!room.getLocalAudioTrack()) {
+                            room.replaceTrack(null, localTracks[i]);
+                        }
                     }
                 }
             }
@@ -81,7 +88,8 @@ window.APP = {
             localVideo,
             remoteVideo,
             remoteAudio,
-            autoPlayVideo
+            autoPlayVideo,
+            stageView
         };
     }
 };
@@ -90,14 +98,23 @@ window.APP = {
  * Simple emulation of jitsi-meet's screen layout behavior
  */
 function updateMaxFrameHeight() {
+    if (!connected) {
+        return;
+    }
+
     let newMaxFrameHeight;
 
-    if (numParticipants <= 2) {
-        newMaxFrameHeight = 720;
-    } else if (numParticipants <= 4) {
-        newMaxFrameHeight = 360;
-    } else {
-        newMaxFrameHeight = 180;
+    if (stageView) {
+        newMaxFrameHeight = 2160;
+    }
+    else {
+        if (numParticipants <= 2) {
+            newMaxFrameHeight = 720;
+        } else if (numParticipants <= 4) {
+            newMaxFrameHeight = 360;
+        } else {
+            newMaxFrameHeight = 180;
+        }
     }
 
     if (room && maxFrameHeight !== newMaxFrameHeight) {
@@ -107,10 +124,108 @@ function updateMaxFrameHeight() {
 }
 
 /**
- *
+ * Simple emulation of jitsi-meet's lastN behavior
+ */
+function updateLastN() {
+    if (!connected) {
+        return;
+    }
+
+    let lastN = typeof config.channelLastN === 'undefined' ? -1 : config.channelLastN;
+
+    const limitedLastN = limitLastN(numParticipants, validateLastNLimits(config.lastNLimits));
+
+    if (limitedLastN !== undefined) {
+        lastN = lastN === -1 ? limitedLastN : Math.min(limitedLastN, lastN);
+    }
+
+    if (lastN === room.getLastN()) {
+        return;
+    }
+
+    room.setLastN(lastN);
+}
+
+/**
+ * Helper function to query whether a participant ID is a valid ID
+ * for stage view.
+ */
+function isValidStageViewParticipant(id) {
+    return (id !== room.myUserId() && room.getParticipantById(id));
+}
+
+/**
+ * Simple emulation of jitsi-meet's stage view participant selection behavior.
+ * Doesn't take into account pinning or screen sharing, and the initial behavior
+ * is slightly different.
+ * @returns Whether the selected participant changed.
+ */
+function selectStageViewParticipant(selected, previous) {
+    let newSelectedParticipant;
+
+    if (isValidStageViewParticipant(selected)) {
+        newSelectedParticipant = selected;
+    }
+    else {
+        newSelectedParticipant = previous.find(isValidStageViewParticipant);
+    }
+    if (newSelectedParticipant && newSelectedParticipant !== selectedParticipant) {
+        selectedParticipant = newSelectedParticipant;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Simple emulation of jitsi-meet's selectParticipants behavior
+ */
+function selectParticipants() {
+    if (!connected) {
+        return;
+    }
+    if (stageView) {
+        if (selectedParticipant) {
+            room.selectParticipants([selectedParticipant]);
+        }
+    }
+    else {
+        /* jitsi-meet's current Tile View behavior. */
+        const ids = room.getParticipants().map(participant => participant.getId());
+        room.selectParticipants(ids);
+    }
+}
+
+/**
+ * Called when number of participants changes.
  */
 function setNumberOfParticipants() {
     $('#participants').text(numParticipants);
+    if (!stageView) {
+        selectParticipants();
+        updateMaxFrameHeight();
+    }
+    updateLastN();
+}
+
+/**
+ * Called when ICE connects
+ */
+function onConnectionEstablished() {
+    connected = true;
+
+    selectParticipants();
+    updateMaxFrameHeight();
+    updateLastN();
+}
+
+/**
+ * Handles dominant speaker changed.
+ * @param id
+ */
+function onDominantSpeakerChanged(selected, previous) {
+    if (selectStageViewParticipant(selected, previous)) {
+        selectParticipants();
+    }
     updateMaxFrameHeight();
 }
 
@@ -124,8 +239,12 @@ function onLocalTracks(tracks = []) {
         if (localTracks[i].getType() === 'video') {
             $('body').append(`<video ${autoPlayVideo ? 'autoplay="1" ' : ''}id='localVideo${i}' />`);
             localTracks[i].attach($(`#localVideo${i}`)[0]);
+
+            room.addTrack(localTracks[i]);
         } else {
-            if (!localAudio) {
+            if (localAudio) {
+                room.addTrack(localTracks[i]);
+            } else {
                 localTracks[i].mute();
             }
 
@@ -133,7 +252,6 @@ function onLocalTracks(tracks = []) {
                 `<audio autoplay='1' muted='true' id='localAudio${i}' />`);
             localTracks[i].attach($(`#localAudio${i}`)[0]);
         }
-        room.addTrack(localTracks[i]);
     }
 }
 
@@ -194,6 +312,16 @@ function onStartMuted() {
  *
  * @param id
  */
+function onUserJoined(id) {
+    numParticipants++;
+    setNumberOfParticipants();
+    remoteTracks[id] = [];
+}
+
+/**
+ *
+ * @param id
+ */
 function onUserLeft(id) {
     numParticipants--;
     setNumberOfParticipants();
@@ -220,12 +348,12 @@ function onConnectionSuccess() {
     room.on(JitsiMeetJS.events.conference.STARTED_MUTED, onStartMuted);
     room.on(JitsiMeetJS.events.conference.TRACK_ADDED, onRemoteTrack);
     room.on(JitsiMeetJS.events.conference.CONFERENCE_JOINED, onConferenceJoined);
-    room.on(JitsiMeetJS.events.conference.USER_JOINED, id => {
-        numParticipants++;
-        setNumberOfParticipants();
-        remoteTracks[id] = [];
-    });
+    room.on(JitsiMeetJS.events.conference.CONNECTION_ESTABLISHED, onConnectionEstablished);
+    room.on(JitsiMeetJS.events.conference.USER_JOINED, onUserJoined);
     room.on(JitsiMeetJS.events.conference.USER_LEFT, onUserLeft);
+    if (stageView) {
+        room.on(JitsiMeetJS.events.conference.DOMINANT_SPEAKER_CHANGED, onDominantSpeakerChanged);
+    }
 
     const devices = [];
 
@@ -233,9 +361,8 @@ function onConnectionSuccess() {
         devices.push('video');
     }
 
-    if (localAudio || autoCreateLocalAudio) {
-        devices.push('audio');
-    }
+    // we always create audio local tracks
+    devices.push('audio');
 
     if (devices.length > 0) {
         JitsiMeetJS.createLocalTracks({ devices })

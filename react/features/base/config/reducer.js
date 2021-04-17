@@ -49,11 +49,11 @@ const INITIAL_RN_STATE = {
     disableAudioLevels: true,
 
     p2p: {
-        disableH264: false,
-        preferH264: true
-    },
-
-    remoteVideoMenu: {}
+        disabledCodec: '',
+        disableH264: false, // deprecated
+        preferredCodec: 'H264',
+        preferH264: true // deprecated
+    }
 };
 
 ReducerRegistry.register('features/base/config', (state = _getInitialState(), action) => {
@@ -143,9 +143,22 @@ function _setConfig(state, { config }) {
     // eslint-disable-next-line no-param-reassign
     config = _translateLegacyConfig(config);
 
+    const { audioQuality } = config;
+    const hdAudioOptions = {};
+
+    if (audioQuality?.stereo) {
+        Object.assign(hdAudioOptions, {
+            disableAP: true,
+            enableNoAudioDetection: false,
+            enableNoisyMicDetection: false,
+            enableTalkWhileMuted: false
+        });
+    }
+
     const newState = _.merge(
         {},
         config,
+        hdAudioOptions,
         { error: undefined },
 
         // The config of _getInitialState() is meant to override the config
@@ -213,6 +226,13 @@ function _translateLegacyConfig(oldValue: Object) {
 
     if (typeof interfaceConfig === 'object' && Array.isArray(interfaceConfig.TOOLBAR_BUTTONS)) {
         newValue.toolbarButtons = interfaceConfig.TOOLBAR_BUTTONS;
+    }
+
+    if (oldValue.stereo || oldValue.opusMaxAverageBitrate) {
+        newValue.audioQuality = {
+            opusMaxAverageBitrate: oldValue.audioQuality?.opusMaxAverageBitrate ?? oldValue.opusMaxAverageBitrate,
+            stereo: oldValue.audioQuality?.stereo ?? oldValue.stereo
+        };
     }
 
     return newValue;

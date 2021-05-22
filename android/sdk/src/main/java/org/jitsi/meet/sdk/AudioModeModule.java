@@ -19,7 +19,7 @@ package org.jitsi.meet.sdk;
 import android.app.Activity;
 import android.content.Context;
 import android.media.AudioManager;
-import android.media.AudioFormat;
+import android.media.AudioFormat.*;
 import android.os.Build;
 
 import com.facebook.react.bridge.Arguments;
@@ -282,10 +282,10 @@ class AudioModeModule extends ReactContextBaseJavaModule {
         if (currentActivity != null) {
             if (mode == DEFAULT) {
                 currentActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-                currentActivity.setVolumeControlStream(AudioFormat.ENCODING_OPUS);
+                currentActivity.setEncoding(AudioFormat.ENCODING_OPUS);
             } else {
                 currentActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-                currentActivity.setVolumeControlStream(AudioFormat.ENCODING_OPUS);
+                currentActivity.setEncoding(AudioFormat.ENCODING_OPUS);
             }
         }
 
